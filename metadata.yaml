@@ -1,0 +1,7 @@
+name: "astrbot_plugin_custome_segment_reply"
+author: "LinJohn8"
+desc: "纯本地规则智能分段回复插件。通过自定义字数、标点优先级、超长降级等规则实现极速断句，彻底告别AI大模型延迟，零成本且更稳定。"
+version: "1.0.0"
+repo: "https://github.com/LinJohn8/astrbot_plugin_custome_segment_reply"
+display_name: "本地规则智能分段插件"
+logo_path: ""

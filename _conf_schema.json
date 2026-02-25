@@ -1,0 +1,96 @@
+{
+    "min_length": {
+        "description": "单段最小字数",
+        "type": "integer",
+        "hint": "触发断句的最小字数限制。例如设为20，则在20字内尽量不断句。",
+        "obvious_hint": true,
+        "default": 20
+    },
+    "max_length": {
+        "description": "常规最大字数",
+        "type": "integer",
+        "hint": "单条消息的常规最大长度。程序优先在 [最小字数, 最大字数] 范围内寻找标点断句。",
+        "obvious_hint": true,
+        "default": 50
+    },
+    "allow_exceed_max": {
+        "description": "允许超出最大字数寻找断点",
+        "type": "boolean",
+        "hint": "若开启：在 [最小, 最大] 范围内没找到标点时，会继续往后找，直到遇到第一个标点。\n若关闭：直接在最大字数处强制生硬截断或往前寻找。",
+        "obvious_hint": true,
+        "default": true
+    },
+    "hard_max_limit": {
+        "description": "绝对硬性截断字数",
+        "type": "integer",
+        "hint": "配合上一项使用。如果允许超出最大字数，为防止无限长，当达到此字数时无论如何都会强制截断。建议设置为100-200。",
+        "obvious_hint": true,
+        "default": 100
+    },
+    "merge_short_tail": {
+        "description": "合并过短的尾部残余",
+        "type": "boolean",
+        "hint": "断句到最后如果只剩下几个字（如“好的。”），单独发一段会很怪。开启此项会将其与上一段合并。",
+        "obvious_hint": true,
+        "default": true
+    },
+    "short_tail_threshold": {
+        "description": "短尾合并字数阈值",
+        "type": "integer",
+        "hint": "最后一段剩余字数少于等于此值时，将触发短尾合并。",
+        "obvious_hint": true,
+        "default": 8
+    },
+    "split_symbols": {
+        "description": "断句符号/关键词列表(按优先级排列)",
+        "type": "list",
+        "hint": "程序会优先寻找靠前的符号进行切割。越强的停顿符（如换行、句号）建议放越前面。",
+        "obvious_hint": true,
+        "default": [
+            "\n\n",
+            "\n",
+            "。",
+            "！",
+            "？",
+            "；",
+            "……",
+            ".",
+            "!",
+            "?",
+            ";",
+            "”",
+            "、",
+            "，",
+            ","
+        ]
+    },
+    "keep_symbol": {
+        "description": "分段是否保留标点符号",
+        "type": "boolean",
+        "hint": "开启则断句后保留该标点（推荐）；关闭则断句后直接丢弃该标点。",
+        "obvious_hint": true,
+        "default": true
+    },
+    "exclude_keywords": {
+        "description": "无需分段的关键词列表",
+        "type": "list",
+        "hint": "包含以下关键词时，将跳过整段处理（不区分大小写）。",
+        "obvious_hint": true,
+        "default": [
+            "模型列表",
+            "帮助",
+            "help",
+            "指令列表",
+            "菜单",
+            "功能列表",
+            "已加载的插件"
+        ]
+    },
+    "random_delay_range": {
+        "description": "随机延迟时间范围（秒）",
+        "type": "list",
+        "hint": "格式为 [最小值, 最大值]，例如 [1, 3]。",
+        "obvious_hint": true,
+        "default": [1, 3]
+    }
+}
