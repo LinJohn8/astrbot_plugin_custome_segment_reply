@@ -1,42 +1,42 @@
 {
     "min_length": {
         "description": "单段最小字数",
-        "type": "integer",
+        "type": "int",
         "hint": "触发断句的最小字数限制。例如设为20，则在20字内尽量不断句。",
         "obvious_hint": true,
         "default": 20
     },
     "max_length": {
         "description": "常规最大字数",
-        "type": "integer",
+        "type": "int",
         "hint": "单条消息的常规最大长度。程序优先在 [最小字数, 最大字数] 范围内寻找标点断句。",
         "obvious_hint": true,
         "default": 50
     },
     "allow_exceed_max": {
         "description": "允许超出最大字数寻找断点",
-        "type": "boolean",
+        "type": "bool",
         "hint": "若开启：在 [最小, 最大] 范围内没找到标点时，会继续往后找，直到遇到第一个标点。\n若关闭：直接在最大字数处强制生硬截断或往前寻找。",
         "obvious_hint": true,
         "default": true
     },
     "hard_max_limit": {
         "description": "绝对硬性截断字数",
-        "type": "integer",
+        "type": "int",
         "hint": "配合上一项使用。如果允许超出最大字数，为防止无限长，当达到此字数时无论如何都会强制截断。建议设置为100-200。",
         "obvious_hint": true,
         "default": 100
     },
     "merge_short_tail": {
         "description": "合并过短的尾部残余",
-        "type": "boolean",
+        "type": "bool",
         "hint": "断句到最后如果只剩下几个字（如“好的。”），单独发一段会很怪。开启此项会将其与上一段合并。",
         "obvious_hint": true,
         "default": true
     },
     "short_tail_threshold": {
         "description": "短尾合并字数阈值",
-        "type": "integer",
+        "type": "int",
         "hint": "最后一段剩余字数少于等于此值时，将触发短尾合并。",
         "obvious_hint": true,
         "default": 8
@@ -66,7 +66,7 @@
     },
     "keep_symbol": {
         "description": "分段是否保留标点符号",
-        "type": "boolean",
+        "type": "bool",
         "hint": "开启则断句后保留该标点（推荐）；关闭则断句后直接丢弃该标点。",
         "obvious_hint": true,
         "default": true

@@ -3,7 +3,7 @@
   <img src="./logo.png" width="180" height="180" alt="CustomSegment Logo" style="border-radius: 50%; box-shadow: 0 0 20px rgba(0,0,0,0.2);">
   <br>
 
-  <img src="https://count.getloli.com/@astrbot_plugin_custome_segment_reply?theme=minecraft&padding=7&offset=0&align=top&scale=1&pixelated=1&darkmode=auto&v=1" alt="Counter">
+  <img src="https://count.getloli.com/@astrbot_custseg_reply?theme=minecraft&padding=7&offset=0&align=top&scale=1&pixelated=1&darkmode=auto" alt="Counter">
 
 # Custom Segment Reply (本地智能分段)
 
