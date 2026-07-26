@@ -68,6 +68,9 @@ class CustomSegmentReplyPlugin(Star):
         exclude_kw = cfg.get("exclude_keywords", [])
         self.exclude_keywords = exclude_kw if isinstance(exclude_kw, list) else []
 
+        # 超长跳过阈值
+        self.skip_longer_than = self._parse_int(cfg, "skip_longer_than", 0)
+
         # 延迟配置
         self._load_delay_config(cfg)
 
@@ -171,7 +174,10 @@ class CustomSegmentReplyPlugin(Star):
             logger.error(f"分段异常，发送原消息。原因：{e}")
 
     def _should_skip(self, text: str) -> bool:
-        """检查文本是否包含排除关键词，若匹配则跳过分段处理。"""
+        """检查文本是否包含排除关键词或长度超过阈值（字数），若匹配则跳过分段处理。"""
+        if self.skip_longer_than > 0 and len(text) > self.skip_longer_than:
+            logger.info(f"文本长度 {len(text)} 超过阈值 {self.skip_longer_than}，跳过分段")
+            return True
         if not self.exclude_keywords:
             return False
         text_lower = text.lower()

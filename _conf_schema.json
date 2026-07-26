@@ -98,6 +98,12 @@
         ],
         "hint": "包含以下关键词时，将跳过整段处理（不区分大小写）。"
     },
+    "skip_longer_than": {
+        "description": "超长跳过阈值（字数），0=禁用",
+        "type": "int",
+        "default": 0,
+        "hint": "当 LLM 回复总字数超过此值时，直接原样发送不分段。设为 0 则禁用此功能。适合代码块等不适合拆分的场景。建议值：200-300。"
+    },
     "delay_type": {
         "description": "延迟类型",
         "type": "string",
