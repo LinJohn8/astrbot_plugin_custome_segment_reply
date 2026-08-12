@@ -324,6 +324,10 @@ class CustomSegmentReplyPlugin(Star):
         if any(ch.isspace() for ch in symbol):
             return total
         while idx + total < len(text) and self._is_symbol_char(text[idx + total]):
+            # 修复：遇到开括号类符号（( [ { （ 【）停止顺延。
+            # 左括号是符号类字符，原先会被吞进上一段，导致"上午的！（/抱着终端）"式错误断句。
+            if text[idx + total] in self.PAIR_SYMBOLS:
+                break
             total += 1
         return total
 
