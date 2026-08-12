@@ -11,6 +11,11 @@ from astrbot.api.all import Context, Star, register, AstrBotConfig, logger
 from astrbot.core.message.message_event_result import MessageChain
 from astrbot.api.message_components import Plain
 
+try:
+    from astrbot.core.platform.astr_message_event import MessageSession as MS
+except ImportError:  # pragma: no cover
+    from astrbot.core.platform.message_session import MessageSession as MS
+
 
 @register("astrbot_plugin_custome_segment_reply", "LinJohn8", "自定义规则本地智能分段", "1.0.0")
 class CustomSegmentReplyPlugin(Star):
@@ -28,6 +33,8 @@ class CustomSegmentReplyPlugin(Star):
         """初始化插件，解析并校验所有配置项。"""
         super().__init__(context)
         self.config = config or {}
+        # 后台分段任务引用，防止被 GC 回收导致剩余段发送中断
+        self._tasks: set = set()
         self._load_config()
 
     def _load_config(self):
@@ -139,6 +146,10 @@ class CustomSegmentReplyPlugin(Star):
         if not result or not result.chain:
             return
 
+        msg_obj = getattr(event, "message_obj", None)
+        # 主动消息插件构造的伪造事件 message_id 为空（见其 _trigger_decorating_hooks）
+        is_proactive = bool(msg_obj and not getattr(msg_obj, "message_id", None))
+
         raw_text = "".join(
             comp.text.strip() for comp in result.chain if isinstance(comp, Plain)
         ).strip()
@@ -152,6 +163,17 @@ class CustomSegmentReplyPlugin(Star):
             segments = self.segment_text_by_rules(raw_text)
 
             if len(segments) <= 1:
+                return
+
+            if is_proactive:
+                # 主动消息：首段替换进原链（主动消息插件会发出它），
+                # 剩余段后台带延迟直发，不阻塞钩子、不触发循环
+                result.chain.clear()
+                result.chain.append(Plain(segments[0]))
+                self._schedule_proactive_rest(event, segments)
+                logger.info(
+                    f"[主动消息分段] 识别主动消息共 {len(segments)} 段，首段替换进原链，剩余 {len(segments) - 1} 段后台发送"
+                )
                 return
 
             full_segmented_text = "\n\n".join(segments)
@@ -172,6 +194,55 @@ class CustomSegmentReplyPlugin(Star):
 
         except Exception as e:
             logger.error(f"分段异常，发送原消息。原因：{e}")
+
+    def _schedule_proactive_rest(self, event: AstrMessageEvent, segments: list) -> None:
+        """调度主动消息剩余段的后台发送任务，并保留引用防止 GC。"""
+        task = asyncio.create_task(self._send_proactive_rest(event, segments))
+        self._tasks.add(task)
+        task.add_done_callback(self._tasks.discard)
+
+    async def _send_proactive_rest(self, event: AstrMessageEvent, segments: list) -> None:
+        """后台逐段发送主动消息剩余段，保留打字节奏。
+
+        注意：不能用 event.send()——伪造事件不走事件管道，send() 只设置
+        _has_send_oper 标记、由管道后续阶段真正发送，而伪造事件没有管道，
+        标记无人消费会导致消息丢失。这里复刻主动消息插件的直发方式：
+        platform.send_by_session(session_obj, chain)。
+        """
+        try:
+            platform_inst = None
+            try:
+                platforms = self.context.platform_manager.get_insts()
+                platform_inst = next(
+                    (p for p in platforms if p.meta().id == event.platform_meta.id),
+                    None,
+                )
+            except Exception:
+                platform_inst = None
+            if not platform_inst:
+                logger.warning(
+                    f"[主动消息分段] 找不到平台 {event.platform_meta.id}，后台剩余段无法发送"
+                )
+                return
+
+            msg_obj = getattr(event, "message_obj", None)
+            m_type = getattr(msg_obj, "type", None)
+            session_obj = MS(
+                platform_name=event.platform_meta.id,
+                message_type=m_type,
+                session_id=event.get_session_id(),
+            )
+            for i in range(1, len(segments)):
+                delay = self._calculate_delay(segments[i - 1], segments[i])
+                await asyncio.sleep(delay)
+                await platform_inst.send_by_session(
+                    session_obj, MessageChain([Plain(segments[i])])
+                )
+            logger.info(
+                f"[主动消息分段] 后台剩余段发送完成，共 {len(segments) - 1} 段"
+            )
+        except Exception as e:
+            logger.error(f"[主动消息分段] 后台发送异常：{e}")
 
     def _should_skip(self, text: str) -> bool:
         """检查文本是否包含排除关键词或长度超过阈值（字数），若匹配则跳过分段处理。"""
