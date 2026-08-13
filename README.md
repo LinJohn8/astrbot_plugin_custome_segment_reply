@@ -12,7 +12,7 @@ _✨ 告别 API 延迟：纯本地计算、零成本、极速响应的多维断�
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/)
 [![AstrBot](https://img.shields.io/badge/AstrBot-Recommended-orange.svg)](https://github.com/Soulter/AstrBot)
-[![Version](https://img.shields.io/badge/Version-v1.0.0-purple.svg)](https://github.com/LinJohn8/astrbot_plugin_custome_segment_reply)
+[![Version](https://img.shields.io/badge/Version-v1.0.1-purple.svg)](https://github.com/LinJohn8/astrbot_plugin_custome_segment_reply)
 
 </div>
 
