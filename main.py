@@ -67,7 +67,16 @@ class CustomSegmentReplyPlugin(Star):
         )
 
         # 符号行为
-        self.keep_symbol = bool(cfg.get("keep_symbol", True))
+        raw_keep = cfg.get("keep_symbol", "all")
+        if isinstance(raw_keep, bool):  # 兼容旧版本
+            self.keep_symbol_mode = "all" if raw_keep else "none"
+        elif isinstance(raw_keep, str):
+            mode = raw_keep.strip().lower()
+            self.keep_symbol_mode = mode if mode in {"all", "none", "list"} else "all"
+        else:
+            self.keep_symbol_mode = "all"
+        self.discard_symbol_list = self._parse_symbol_list(
+            cfg.get("discard_symbol_list"), default=[])
         self.extend_to_trailing_symbols = bool(cfg.get("extend_to_trailing_symbols", True))
         self.protect_paired_symbols = bool(cfg.get("protect_paired_symbols", False))
 
@@ -287,7 +296,7 @@ class CustomSegmentReplyPlugin(Star):
                 while i <= len(piece) - len(symbol):
                     if piece.startswith(symbol, i):
                         sep_len = self._get_split_char_len(piece, i, symbol)
-                        if self.keep_symbol:
+                        if self._should_keep_symbol(symbol):
                             new_pieces.append(piece[last_end:i + sep_len])
                         else:
                             new_pieces.append(piece[last_end:i])
@@ -310,9 +319,9 @@ class CustomSegmentReplyPlugin(Star):
                 break
 
             protected = self._build_protected_ranges(remaining) if self.protect_paired_symbols else []
-            split_idx, char_len = self._find_split_point(remaining, protected)
+            split_idx, char_len, symbol = self._find_split_point(remaining, protected)
 
-            if self.keep_symbol:
+            if self._should_keep_symbol(symbol):
                 cut = split_idx + char_len
                 seg = remaining[:cut].strip()
                 remaining = remaining[cut:].strip()
@@ -325,8 +334,11 @@ class CustomSegmentReplyPlugin(Star):
 
         return segments
 
-    def _find_split_point(self, text: str, protected: List[tuple]) -> Tuple[int, int]:
-        """在 text 中寻找最佳分段点，返回 (index, symbol_length)。"""
+    def _find_split_point(self, text: str, protected: List[tuple]) -> Tuple[int, int, str]:
+        """在 text 中寻找最佳分段点，返回 (index, symbol_length, 命中的符号)。
+
+        若强制截断时无可保留的符号，则第三项返回空字符串。
+        """
 
         # 1) 优先在 [min_length, max_length) 范围内反向查找
         result = self._rfind_symbol(text, self.min_length, self.max_length, protected)
@@ -339,31 +351,37 @@ class CustomSegmentReplyPlugin(Star):
             result = self._find_symbol_forward(text, self.max_length, search_end, protected)
             if result:
                 return result
-            return search_end, 0
+            return search_end, 0, ""
 
         # 3) 不允许超出时，在 [0, min_length) 范围内反向查找
         result = self._rfind_symbol(text, 0, self.min_length, protected)
         if result:
             return result
-        return self.max_length, 0
+        return self.max_length, 0, ""
 
-    def _rfind_symbol(self, text: str, start: int, end: int, protected: List[tuple]) -> Optional[Tuple[int, int]]:
+    def _rfind_symbol(self, text: str, start: int, end: int, protected: List[tuple]) -> Optional[Tuple[int, int, str]]:
         """在 text[start:end] 中反向查找第一个匹配的分段符号。"""
         for symbol in self.split_symbols:
             idx = text.rfind(symbol, start, end)
             if idx != -1 and not self._in_protected_range(idx, protected):
-                return idx, self._get_split_char_len(text, idx, symbol)
+                return idx, self._get_split_char_len(text, idx, symbol), symbol
         return None
 
-    def _find_symbol_forward(self, text: str, start: int, end: int, protected: List[tuple]) -> Optional[Tuple[int, int]]:
+    def _find_symbol_forward(self, text: str, start: int, end: int, protected: List[tuple]) -> Optional[Tuple[int, int, str]]:
         """在 text[start:end] 中正向查找第一个匹配的分段符号。"""
         for i in range(start, end):
             for symbol in self.split_symbols:
                 if text.startswith(symbol, i) and not self._in_protected_range(i, protected):
-                    return i, self._get_split_char_len(text, i, symbol)
+                    return i, self._get_split_char_len(text, i, symbol), symbol
         return None
 
     # ========================= 符号处理工具 =========================
+
+    def _should_keep_symbol(self, symbol: str) -> bool:
+        """判断命中的分段符（及其顺延的连续符号）是否保留在段末。"""
+        if self.keep_symbol_mode == "list":
+            return symbol not in self.discard_symbol_list
+        return self.keep_symbol_mode == "all"
 
     @staticmethod
     def _is_symbol_char(ch: str) -> bool:

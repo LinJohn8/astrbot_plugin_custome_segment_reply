@@ -67,10 +67,23 @@
         "hint": "程序会优先寻找靠前的符号进行切割。越强的停顿符（如换行、句号）建议放越前面。"
     },
     "keep_symbol": {
-        "description": "分段是否保留标点符号",
-        "type": "bool",
-        "default": true,
-        "hint": "开启则断句后保留该标点（推荐）；关闭则断句后直接丢弃该标点。"
+        "description": "分段保留标点符号的策略",
+        "type": "string",
+        "default": "all",
+        "options": ["all", "none", "list"],
+        "labels": ["全部保留", "全部不保留", "选择性丢弃"],
+        "hint": "可选择断句后保留该标点，断句后直接丢弃该标点，或断句后仅将“丢弃的断句符号列表”中的标点丢弃，其余保留。"
+    },
+    "discard_symbol_list": {
+        "description": "丢弃的断句符号列表",
+        "type": "list",
+        "default": [
+            "、",
+            "，",
+            "。",
+            ","
+        ],
+        "hint": "仅当“分段保留标点符号的策略”设为“选择性丢弃”时生效。列表中的符号在断句后会被丢弃。"
     },
     "extend_to_trailing_symbols": {
         "description": "分段符后顺延连续符号",
@@ -108,24 +121,26 @@
         "description": "延迟类型",
         "type": "string",
         "default": "random",
-        "hint": "可选 fixed / random / per_char / smart。fixed=固定间隔；random=区间正态随机；per_char=按字符数；smart=基础间隔+符号修正。"
+        "options": ["fixed", "random", "per_char","smart"],
+        "labels": ["固定间隔", "区间正态随机", "按字符数", "基础间隔+符号修正"],
+        "hint": "选择计算每次发送分段间延迟的方式。模拟真人打字的延迟。"
     },
     "fixed_delay_seconds": {
         "description": "固定延迟秒数",
         "type": "float",
         "default": 1.0,
-        "hint": "仅在 delay_type=fixed 时生效。每条分段发送前固定等待该秒数。"
+        "hint": "仅在延迟类型为\"固定间隔\"时生效。每条分段发送前固定等待该秒数。"
     },
     "random_delay_range": {
         "description": "随机延迟时间范围（秒）",
         "type": "list",
         "default": [1, 3],
-        "hint": "仅在 delay_type=random 时生效。格式为 [最小值, 最大值]，随机方式为正态分布并限制在区间内。"
+        "hint": "仅在延迟类型为\"区间正态随机\"时生效。格式为 [最小值, 最大值]，随机方式为正态分布并限制在区间内。"
     },
     "per_char_delay_seconds": {
         "description": "每字符延迟秒数",
         "type": "float",
         "default": 0.08,
-        "hint": "仅在 delay_type=per_char 时生效。实际延迟=该值×当前分段字符数。"
+        "hint": "仅在延迟类型为\"按字符数\"时生效。实际延迟=该值×当前分段字符数。"
     }
 }
